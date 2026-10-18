@@ -60,10 +60,13 @@ CREATE TABLE IF NOT EXISTS students (
 -- 5. Courses Table
 CREATE TABLE IF NOT EXISTS courses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    course_code VARCHAR(50) UNIQUE NOT NULL, -- e.g. CSE 250
+    course_code VARCHAR(50) UNIQUE NOT NULL, -- e.g. CSE 0610 2250
     title VARCHAR(200) NOT NULL,
     credit NUMERIC(3, 2) NOT NULL,
-    semester VARCHAR(20) NOT NULL, -- e.g. 2-1
+    type VARCHAR(20) NOT NULL DEFAULT 'Theory' CHECK (type IN ('Theory', 'Lab')),
+    semester VARCHAR(50) NOT NULL, -- e.g. '4th Semester' or '2-2'
+    session VARCHAR(30) NOT NULL DEFAULT '2023-2024',
+    course_type VARCHAR(30) NOT NULL DEFAULT 'Regular' CHECK (course_type IN ('Regular', 'Optional')),
     assigned_teacher_id UUID REFERENCES teachers(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

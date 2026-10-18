@@ -31,12 +31,29 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=6"`
 }
 
+// StudentProfileBrief provides essential student details
+type StudentProfileBrief struct {
+	StudentID       string `json:"student_id,omitempty"`
+	RegNo           string `json:"reg_no,omitempty"`
+	FullName        string `json:"full_name,omitempty"`
+	CurrentSemester string `json:"current_semester,omitempty"`
+}
+
+// TeacherProfileBrief provides essential teacher details
+type TeacherProfileBrief struct {
+	TeacherID   string `json:"teacher_id,omitempty"`
+	TeacherCode string `json:"teacher_code,omitempty"`
+	FullName    string `json:"full_name,omitempty"`
+}
+
 // UserResponse represents safe user data returned in API
 type UserResponse struct {
-	ID        string    `json:"id"`
-	Email     string    `json:"email"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        string               `json:"id"`
+	Email     string               `json:"email"`
+	Role      string               `json:"role"`
+	Student   *StudentProfileBrief `json:"student,omitempty"`
+	Teacher   *TeacherProfileBrief `json:"teacher,omitempty"`
+	CreatedAt time.Time            `json:"created_at"`
 }
 
 // LoginResponse represents the successful login payload

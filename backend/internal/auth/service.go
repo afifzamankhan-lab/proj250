@@ -148,13 +148,29 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, 
 		return nil, fmt.Errorf("failed saving refresh token: %w", err)
 	}
 
+	userRes := UserResponse{
+		ID:        userID,
+		Email:     req.Email,
+		Role:      role,
+		CreatedAt: createdAt,
+	}
+
+	if role == "student" {
+		var st StudentProfileBrief
+		_ = s.db.Pool.QueryRow(ctx, "SELECT id, reg_no, full_name, current_semester FROM students WHERE user_id = $1", userID).Scan(&st.StudentID, &st.RegNo, &st.FullName, &st.CurrentSemester)
+		if st.StudentID != "" {
+			userRes.Student = &st
+		}
+	} else if role == "teacher" {
+		var tp TeacherProfileBrief
+		_ = s.db.Pool.QueryRow(ctx, "SELECT id, teacher_code, full_name FROM teachers WHERE user_id = $1", userID).Scan(&tp.TeacherID, &tp.TeacherCode, &tp.FullName)
+		if tp.TeacherID != "" {
+			userRes.Teacher = &tp
+		}
+	}
+
 	return &LoginResponse{
-		User: UserResponse{
-			ID:        userID,
-			Email:     req.Email,
-			Role:      role,
-			CreatedAt: createdAt,
-		},
+		User:         userRes,
 		AccessToken:  tokenPair.AccessToken,
 		RefreshToken: tokenPair.RefreshToken,
 		ExpiresAt:    tokenPair.ExpiresAt,
@@ -223,13 +239,29 @@ func (s *Service) Refresh(ctx context.Context, refreshTokenStr string) (*LoginRe
 		return nil, fmt.Errorf("failed storing new refresh token: %w", err)
 	}
 
+	userRes := UserResponse{
+		ID:        userID,
+		Email:     email,
+		Role:      role,
+		CreatedAt: createdAt,
+	}
+
+	if role == "student" {
+		var st StudentProfileBrief
+		_ = s.db.Pool.QueryRow(ctx, "SELECT id, reg_no, full_name, current_semester FROM students WHERE user_id = $1", userID).Scan(&st.StudentID, &st.RegNo, &st.FullName, &st.CurrentSemester)
+		if st.StudentID != "" {
+			userRes.Student = &st
+		}
+	} else if role == "teacher" {
+		var tp TeacherProfileBrief
+		_ = s.db.Pool.QueryRow(ctx, "SELECT id, teacher_code, full_name FROM teachers WHERE user_id = $1", userID).Scan(&tp.TeacherID, &tp.TeacherCode, &tp.FullName)
+		if tp.TeacherID != "" {
+			userRes.Teacher = &tp
+		}
+	}
+
 	return &LoginResponse{
-		User: UserResponse{
-			ID:        userID,
-			Email:     email,
-			Role:      role,
-			CreatedAt: createdAt,
-		},
+		User:         userRes,
 		AccessToken:  newTokens.AccessToken,
 		RefreshToken: newTokens.RefreshToken,
 		ExpiresAt:    newTokens.ExpiresAt,

@@ -94,10 +94,36 @@ All seed accounts use the password: `Password@123`
 | Role | Email | Description |
 |---|---|---|
 | **Admin** | `admin@sust.edu` | Head of Department / Exam Controller |
-| **Teacher** | `teacher@sust.edu` | Prof. Dr. M. Rezaul Karim (Course Instructor) |
-| **Student** | `student@student.sust.edu` | Afif Zaman Khan (Reg: `2023331045`, Batch 2023) |
+| **Teacher** | `teacher@sust.edu` | Prof. Dr. M. Rezaul Karim (Course Instructor & Head) |
+| **Student 1** | `student@student.sust.edu` | Afif Zaman Khan (Reg: `2023331045`, 4th Semester / 2-2) |
+| **Student 2** | `partner@student.sust.edu` | Project Teammate (Reg: `2023331046`, 4th Semester / 2-2) |
 | **Parent** | `parent@sust.edu` | Guardian of Afif Zaman Khan |
 | **Accountant**| `accountant@sust.edu` | Academic & Hall Fees Section |
+
+---
+
+## 📚 4th Semester (2-2) Courses Initialized
+
+| Course Code | Course Title | Credit | Type |
+|---|---|---|---|
+| **CSE 0610 2250** | Project Work II | 1.5 | Lab |
+| **CSE 0612 2260** | Web Technologies | 2.0 | Lab |
+| **CSE 0613 2234** | Introduction to Competitive Programming | 1.5 | Lab |
+| **CSE 0613 2247** | Theory of Computation | 3.0 | Theory |
+| **CSE 0541 2257** | Numerical Analysis | 2.0 | Theory |
+| **CSE 0688 2292** | Introduction to Data Science Lab | 1.5 | Lab |
+| **CSE 0541 2258** | Numerical Analysis Lab | 1.5 | Lab |
+| **MAT 0541 2204D**| Complex Variables, Laplace Transform and Fourier Series | 3.0 | Theory |
+| **EEE 0714 2201D**| Digital Logic Design | 3.0 | Theory |
+| **EEE 0714 2202D**| Digital Logic Design Lab | 2.0 | Lab |
+| **Total** | **10 Courses** | **21.0 Cr** | |
+
+*Note: Past Semesters (1-1, 1-2, 2-1) results and cumulative CGPA (3.89) are also pre-seeded for realistic transcript display.*
+
+---
+
+## 📖 Viva Defense Guide
+See [VIVA_DEFENSE_DAY1.md](file:///Users/afif/Documents/proj250'/VIVA_DEFENSE_DAY1.md) for complete questions, answers, and architectural explanations for your university examiner.
 
 ---
 
