@@ -10,10 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"sust-cse-portal/internal/attendance"
 	"sust-cse-portal/internal/auth"
 	"sust-cse-portal/internal/config"
+	"sust-cse-portal/internal/course"
 	"sust-cse-portal/internal/db"
 	customMiddleware "sust-cse-portal/internal/middleware"
+	"sust-cse-portal/internal/routine"
 	"sust-cse-portal/internal/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -58,6 +61,21 @@ func main() {
 		authHandler = auth.NewHandler(authService)
 	}
 
+	// ============================================================================
+	// AFIF'S GO SERVICES (Authored by Afif Zaman Khan - 2023331020):
+	// 1. Routine Engine (Timetable, Room Availability, Live Class Tracker)
+	// 2. Course Catalog (Analytics, Prerequisites, Evaluation Schemes)
+	// 3. Attendance Engine (SUST 75% Ordinance & Safe-Bunk Calculator)
+	// ============================================================================
+	routineService := routine.NewService()
+	routineHandler := routine.NewHandler(routineService)
+
+	courseService := course.NewService()
+	courseHandler := course.NewHandler(courseService)
+
+	attendanceService := attendance.NewService()
+	attendanceHandler := attendance.NewHandler(attendanceService)
+
 	// 4. Rate Limiters (Written from scratch with token bucket & cleanup)
 	authRateLimiter := customMiddleware.NewIPRateLimiter(cfg.RateLimitAuthPerMin, 5) // 5 req/min
 	apiRateLimiter := customMiddleware.NewIPRateLimiter(cfg.RateLimitAPIPerMin, 60)   // 60 req/min
@@ -74,7 +92,7 @@ func main() {
 
 	// CORS Setup
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", cfg.FrontendURL},
+		AllowedOrigins:   []string{"http://localhost:3000", "http://localhost:3001", cfg.FrontendURL},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link", "Retry-After"},
@@ -101,7 +119,29 @@ func main() {
 			})
 		})
 
-		// Auth Routes
+		// ============================================================================
+		// AFIF'S API DOMAIN (Authored by Afif Zaman Khan - 2023331020)
+		// ============================================================================
+		api.Route("/routines", func(routineRouter chi.Router) {
+			routineRouter.Get("/", routineHandler.GetDayRoutine)
+			routineRouter.Get("/weekly", routineHandler.GetWeeklyGrid)
+			routineRouter.Get("/current", routineHandler.GetCurrentClass)
+			routineRouter.Get("/rooms", routineHandler.GetRoomAvailability)
+		})
+
+		api.Route("/courses", func(courseRouter chi.Router) {
+			courseRouter.Get("/", courseHandler.GetCourses)
+			courseRouter.Get("/analytics", courseHandler.GetAnalytics)
+			courseRouter.Post("/prerequisites/check", courseHandler.CheckPrerequisites)
+			courseRouter.Get("/{code}", courseHandler.GetCourseByCode)
+		})
+
+		api.Route("/attendance", func(attRouter chi.Router) {
+			attRouter.Get("/", attendanceHandler.GetStudentAttendance)
+			attRouter.Get("/safebunk", attendanceHandler.AnalyzeSafeBunk)
+		})
+
+		// Auth Routes (Public login endpoints)
 		api.Route("/auth", func(authRouter chi.Router) {
 			if authHandler == nil {
 				authRouter.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
@@ -110,30 +150,17 @@ func main() {
 				return
 			}
 
-			// Public auth endpoints with STRICT rate limit (5 req/min)
 			authRouter.Group(func(public chi.Router) {
 				public.Use(customMiddleware.RateLimitMiddleware(authRateLimiter))
 				public.Post("/login", authHandler.Login)
 				public.Post("/refresh", authHandler.Refresh)
 				public.Post("/logout", authHandler.Logout)
 			})
-
-			// Protected auth endpoints
-			authRouter.Group(func(protected chi.Router) {
-				protected.Use(customMiddleware.AuthMiddleware(cfg))
-
-				// Current user profile
-				protected.Get("/me", authHandler.Me)
-				protected.Post("/change-password", authHandler.ChangePassword)
-
-				// Admin-only user registration
-				protected.With(customMiddleware.RequireRoles("admin")).Post("/register", authHandler.Register)
-			})
 		})
 	})
 
 	// 7. Start HTTP Server with Graceful Shutdown
-	server := &http.Server{
+	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
@@ -143,23 +170,23 @@ func main() {
 
 	go func() {
 		log.Printf("🚀 Server running on port %s (http://localhost:%s)", cfg.Port, cfg.Port)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("❌ Server listen error: %v", err)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("❌ HTTP server error: %v", err)
 		}
 	}()
 
-	// Wait for terminate signal
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
 	log.Println("🛑 Shutting down server gracefully...")
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownCancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("❌ Forced server shutdown: %v", err)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("❌ Server forced to shutdown: %v", err)
 	}
 
-	log.Println("✅ Server exited cleanly.")
+	log.Println("✅ Server gracefully stopped. Goodbye!")
 }

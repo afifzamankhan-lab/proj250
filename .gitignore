@@ -49,3 +49,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Usama's offline packages
+usama_backup/
+usama_part.zip
