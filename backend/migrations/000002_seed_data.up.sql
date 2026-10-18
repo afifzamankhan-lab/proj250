@@ -19,8 +19,8 @@ ON CONFLICT (teacher_code) DO NOTHING;
 
 -- 3. Insert Students (Student 1: Afif Zaman Khan, Student 2: Teammate / Partner)
 INSERT INTO students (id, user_id, reg_no, full_name, batch, session, current_semester, phone, guardian_name, guardian_phone, guardian_user_id, hall_name) VALUES
-('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '33333333-3333-3333-3333-333333333333', '2023331045', 'Afif Zaman Khan', '2023', '2023-2024', '4th Semester', '+8801700000045', 'Mr. Zaman Khan', '+8801711000000', '44444444-4444-4444-4444-444444444444', 'Shah Paran Hall'),
-('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc', '33333333-3333-3333-3333-333333333334', '2023331046', 'Project Teammate', '2023', '2023-2024', '4th Semester', '+8801700000046', 'Guardian Name', '+8801711000001', NULL, 'Shah Paran Hall')
+('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '33333333-3333-3333-3333-333333333333', '2023331020', 'Afif Zaman Khan', '2023', '2023-2024', '4th Semester', '+8801700000020', 'Mr. Zaman Khan', '+8801711000000', '44444444-4444-4444-4444-444444444444', 'Shah Paran Hall'),
+('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc', '33333333-3333-3333-3333-333333333334', '2023331088', 'Usama', '2023', '2023-2024', '4th Semester', '+8801700000088', 'Guardian Name', '+8801711000001', NULL, 'Shah Paran Hall')
 ON CONFLICT (reg_no) DO NOTHING;
 
 -- 4. Insert 4th Semester (2-2) Official SUST CSE Courses (from syllabus)

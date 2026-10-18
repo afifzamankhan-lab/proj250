@@ -95,8 +95,8 @@ All seed accounts use the password: `Password@123`
 |---|---|---|
 | **Admin** | `admin@sust.edu` | Head of Department / Exam Controller |
 | **Teacher** | `teacher@sust.edu` | Prof. Dr. M. Rezaul Karim (Course Instructor & Head) |
-| **Student 1** | `student@student.sust.edu` | Afif Zaman Khan (Reg: `2023331045`, 4th Semester / 2-2) |
-| **Student 2** | `partner@student.sust.edu` | Project Teammate (Reg: `2023331046`, 4th Semester / 2-2) |
+| **Student 1** | `student@student.sust.edu` | Afif Zaman Khan (Reg: `2023331020`, 4th Semester / 2-2) |
+| **Student 2** | `partner@student.sust.edu` | Usama (Reg: `2023331088`, 4th Semester / 2-2) |
 | **Parent** | `parent@sust.edu` | Guardian of Afif Zaman Khan |
 | **Accountant**| `accountant@sust.edu` | Academic & Hall Fees Section |
 
