@@ -1,6 +1,15 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import {
+  checkBackendHealth,
+  fetchLiveCurrentClass,
+  fetchLiveAttendance,
+  fetchRoomConflict,
+  LiveCurrentClass,
+  LiveAttendanceProfile,
+  LiveRoomConflict,
+} from "@/lib/api";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
 
@@ -1127,6 +1136,7 @@ function Dashboard({
 }) {
   const is4thSem = selectedSemester === 4;
   const [tab, setTab] = useState<DashTab>(is4thSem ? "schedule" : "courses");
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calOffset, setCalOffset] = useState(0);
 
@@ -1135,6 +1145,43 @@ function Dashboard({
   // Odd registration last digits -> Section A
   const autoSection = getSectionByReg(user.registration);
   const [section, setSection] = useState<"A" | "B">(autoSection);
+
+  // Day 2: Live Go Backend API States
+  const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
+  const [liveCurrent, setLiveCurrent] = useState<LiveCurrentClass | null>(null);
+  const [liveAttendance, setLiveAttendance] = useState<LiveAttendanceProfile | null>(null);
+  const [checkRoomName, setCheckRoomName] = useState<string>("Room 303");
+  const [roomResult, setRoomResult] = useState<LiveRoomConflict | null>(null);
+  const [isCheckingRoom, setIsCheckingRoom] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveData() {
+      const isHealthy = await checkBackendHealth();
+      if (isMounted) setBackendConnected(isHealthy);
+      if (isHealthy) {
+        const cur = await fetchLiveCurrentClass(section);
+        if (isMounted && cur) setLiveCurrent(cur);
+        const att = await fetchLiveAttendance(user.registration);
+        if (isMounted && att) setLiveAttendance(att);
+      }
+    }
+    loadLiveData();
+    const interval = setInterval(loadLiveData, 20000); // 20s auto refresh
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [section, user.registration]);
+
+  const handleCheckRoom = async () => {
+    setIsCheckingRoom(true);
+    const day = selectedDate.getDay() >= 0 && selectedDate.getDay() <= 4 ? selectedDate.getDay() : 0;
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    const res = await fetchRoomConflict(day, nowMin, nowMin + 45, checkRoomName);
+    setRoomResult(res);
+    setIsCheckingRoom(false);
+  };
   const [scheduleMode, setScheduleMode] = useState<"daily" | "weekly">("daily");
 
   const today = new Date();
@@ -1209,6 +1256,22 @@ function Dashboard({
 
         {/* Center: Semester & Section Badges */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Day 2: Live Go Backend Status Pill */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px",
+            borderRadius: 999, fontSize: 12, fontWeight: 700,
+            background: backendConnected ? "#f0fdf4" : "#fefce8",
+            border: `1px solid ${backendConnected ? "#86efac" : "#fde047"}`,
+            color: backendConnected ? "#166534" : "#854d0e"
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: backendConnected ? "#16a34a" : "#ca8a04",
+              display: "inline-block",
+              boxShadow: backendConnected ? "0 0 8px #16a34a" : "none"
+            }} />
+            <span>{backendConnected ? "Live Go API (:8080)" : "Offline Mode"}</span>
+          </div>
           <span style={{
             background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1a5fb4",
             padding: "5px 12px", borderRadius: 999, fontSize: 13, fontWeight: 800
@@ -1305,6 +1368,55 @@ function Dashboard({
           {/* TAB 1: SCHEDULE (DAILY + WEEKLY) */}
           {tab === "schedule" && is4thSem && (
             <div>
+              {/* Day 2: Real-Time Live Class Monitor Banner (Go Backend) */}
+              {liveCurrent && (
+                <div style={{
+                  background: liveCurrent.status === "in_class" 
+                    ? "linear-gradient(135deg, #064e3b, #047857)" 
+                    : liveCurrent.status === "between_classes"
+                    ? "linear-gradient(135deg, #1e3a8a, #2563eb)"
+                    : "linear-gradient(135deg, #0f172a, #1e293b)",
+                  color: "#ffffff", borderRadius: 14, padding: "14px 20px", marginBottom: 16,
+                  display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12,
+                  boxShadow: "0 4px 12px rgba(15,23,42,0.12)", border: "1px solid rgba(255,255,255,0.1)"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: liveCurrent.status === "in_class" ? "#4ade80" : "#fde047",
+                      boxShadow: liveCurrent.status === "in_class" ? "0 0 10px #4ade80" : "none"
+                    }} />
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: "#93c5fd" }}>
+                        ⚡ Real-Time Schedule Tracker (Section {liveCurrent.section})
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 800, marginTop: 1 }}>
+                        {liveCurrent.status === "in_class" && liveCurrent.currentClass ? (
+                          `Now in session: ${liveCurrent.currentClass.courseCode} — ${liveCurrent.currentClass.course}`
+                        ) : liveCurrent.status === "between_classes" && liveCurrent.nextClass ? (
+                          `Next upcoming: ${liveCurrent.nextClass.courseCode} (${liveCurrent.nextClass.time}) in ${liveCurrent.nextClass.room}`
+                        ) : liveCurrent.status === "break" ? (
+                          "☕ Lunch & Prayer Recess (12:45 PM – 01:45 PM)"
+                        ) : liveCurrent.status === "weekend" ? (
+                          "🎉 Weekend (Friday/Saturday) — Department Closed"
+                        ) : (
+                          "Classes concluded for today"
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {liveCurrent.currentClass && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <span style={{ background: "rgba(255,255,255,0.18)", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
+                        📍 {liveCurrent.currentClass.room}
+                      </span>
+                      <span style={{ background: "rgba(255,255,255,0.18)", padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>
+                        👨‍🏫 {liveCurrent.currentClass.teacher}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Section Selector & View Switcher Bar */}
               <div style={{
                 background: "#ffffff", border: "1.5px solid #cbd5e1", borderRadius: 14,
@@ -1626,6 +1738,88 @@ function Dashboard({
                         <span style={{ color: "#ef4444" }}>Fri/Sat: Weekend</span>
                       </div>
                     </div>
+
+                    {/* Day 2: Live Room Vacancy Checker Widget (Go API) */}
+                    <div style={{
+                      background: "#ffffff", border: "1.5px solid #cbd5e1", borderRadius: 14,
+                      padding: "16px 18px", marginBottom: 14, boxShadow: "0 2px 6px rgba(15,23,42,0.06)"
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", color: "#64748b", marginBottom: 6 }}>
+                        🏢 Classroom Vacancy Checker
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 10 }}>
+                        Check if a lab or room is free right now:
+                      </div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+                        <select
+                          value={checkRoomName}
+                          onChange={(e) => setCheckRoomName(e.target.value)}
+                          style={{
+                            flex: 1, padding: "7px 10px", borderRadius: 8, border: "1.5px solid #cbd5e1",
+                            fontSize: 13, fontWeight: 700, background: "#f8fafc", color: "#0f172a"
+                          }}
+                        >
+                          <option value="Room 303">Room 303 (OOP Lab)</option>
+                          <option value="Room 304">Room 304 (DBMS Lab)</option>
+                          <option value="Room 629">Room 629 (Theory)</option>
+                          <option value="Room 630">Room 630 (DSA Lab)</option>
+                          <option value="Gallery 2">Gallery 2 (Theory)</option>
+                          <option value="Room EEE">Room EEE (Circuit Lab)</option>
+                        </select>
+                        <button
+                          onClick={handleCheckRoom}
+                          disabled={isCheckingRoom}
+                          style={{
+                            background: "#1a5fb4", color: "#ffffff", border: "none",
+                            borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 700,
+                            cursor: "pointer", transition: "all 0.15s ease"
+                          }}
+                        >
+                          {isCheckingRoom ? "..." : "Check"}
+                        </button>
+                      </div>
+
+                      {roomResult && (
+                        <div style={{
+                          padding: "10px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                          background: roomResult.hasConflict ? "#fef2f2" : "#f0fdf4",
+                          border: `1px solid ${roomResult.hasConflict ? "#fca5a5" : "#86efac"}`,
+                          color: roomResult.hasConflict ? "#991b1b" : "#166534"
+                        }}>
+                          <div style={{ fontWeight: 800, marginBottom: 2 }}>
+                            {roomResult.hasConflict ? "⚠️ Occupied Right Now" : "✅ Vacant & Free to Use"}
+                          </div>
+                          <div>{roomResult.message}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Day 2: Attendance & Safe-Bunks Summary Card (Go API) */}
+                    {liveAttendance && (
+                      <div style={{
+                        background: "linear-gradient(135deg, #f8fafc, #edf2f7)",
+                        border: "1.5px solid #cbd5e1", borderRadius: 14,
+                        padding: "16px 18px", boxShadow: "0 2px 6px rgba(15,23,42,0.06)"
+                      }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", color: "#64748b", marginBottom: 6 }}>
+                          📊 Attendance & Safe-Bunks
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                          <span style={{ fontSize: 22, fontWeight: 900, color: "#166534" }}>
+                            {liveAttendance.overallPercentage}%
+                          </span>
+                          <span style={{
+                            background: "#dcfce7", color: "#15803d", border: "1px solid #86efac",
+                            padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800
+                          }}>
+                            {liveAttendance.overallStatus}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 12, color: "#334155", lineHeight: 1.4, margin: 0 }}>
+                          According to SUST 75% examination rules, you have good standing across all 10 courses with safe bunk buffers.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

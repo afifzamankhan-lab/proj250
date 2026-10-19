@@ -314,3 +314,63 @@ func DayNameToIndex(name string) int {
 		return int(time.Now().Weekday())
 	}
 }
+
+// CheckRoomBookingConflict checks if a proposed room is already occupied during a given period
+func (s *Service) CheckRoomBookingConflict(day int, startMin, endMin int, room string) RoomConflictResponse {
+	dayNames := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"}
+	dayName := "Weekend"
+	if day >= 0 && day < len(dayNames) {
+		dayName = dayNames[day]
+	}
+
+	timeSpan := fmt.Sprintf("%02d:%02d - %02d:%02d", startMin/60, startMin%60, endMin/60, endMin%60)
+
+	if day < 0 || day > 4 {
+		return RoomConflictResponse{
+			HasConflict: false,
+			Room:        room,
+			DayName:     dayName,
+			TimeSpan:    timeSpan,
+			Message:     "Weekend - all classrooms are vacant",
+		}
+	}
+
+	checkConflict := func(classes []RoutinePeriod, sec string) (bool, string) {
+		for _, c := range classes {
+			if strings.EqualFold(c.Room, room) {
+				if startMin < c.EndMin && endMin > c.StartMin {
+					return true, fmt.Sprintf("Occupied by %s (%s) for Section %s [%s - %s]", c.CourseCode, c.Teacher, sec, c.Time, c.EndTime)
+				}
+			}
+		}
+		return false, ""
+	}
+
+	if conflict, reason := checkConflict(s.sectionA[day], "A"); conflict {
+		return RoomConflictResponse{
+			HasConflict: true,
+			Room:        room,
+			DayName:     dayName,
+			TimeSpan:    timeSpan,
+			Message:     reason,
+		}
+	}
+
+	if conflict, reason := checkConflict(s.sectionB[day], "B"); conflict {
+		return RoomConflictResponse{
+			HasConflict: true,
+			Room:        room,
+			DayName:     dayName,
+			TimeSpan:    timeSpan,
+			Message:     reason,
+		}
+	}
+
+	return RoomConflictResponse{
+		HasConflict: false,
+		Room:        room,
+		DayName:     dayName,
+		TimeSpan:    timeSpan,
+		Message:     "Room is free and available for booking/study",
+	}
+}

@@ -61,3 +61,11 @@ type RoomAvailabilityResponse struct {
 	FreeRooms []string `json:"freeRooms"`
 	BusyRooms []string `json:"busyRooms"`
 }
+
+type RoomConflictResponse struct {
+	HasConflict bool   `json:"hasConflict"`
+	Room        string `json:"room"`
+	DayName     string `json:"dayName"`
+	TimeSpan    string `json:"timeSpan"`
+	Message     string `json:"message"`
+}

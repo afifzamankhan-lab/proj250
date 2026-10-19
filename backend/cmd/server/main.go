@@ -127,6 +127,7 @@ func main() {
 			routineRouter.Get("/weekly", routineHandler.GetWeeklyGrid)
 			routineRouter.Get("/current", routineHandler.GetCurrentClass)
 			routineRouter.Get("/rooms", routineHandler.GetRoomAvailability)
+			routineRouter.Get("/check-room", routineHandler.CheckRoomConflict)
 		})
 
 		api.Route("/courses", func(courseRouter chi.Router) {

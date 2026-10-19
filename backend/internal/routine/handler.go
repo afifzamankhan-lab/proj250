@@ -117,3 +117,37 @@ func (h *Handler) GetRoomAvailability(w http.ResponseWriter, r *http.Request) {
 	res := h.service.GetRoomAvailability(day, minuteOfDay)
 	utils.Success(w, http.StatusOK, "Room availability calculated", res)
 }
+
+// GET /api/v1/routines/check-room?day=0&start=540&end=630&room=Room 303
+func (h *Handler) CheckRoomConflict(w http.ResponseWriter, r *http.Request) {
+	dayParam := r.URL.Query().Get("day")
+	var day int
+	if dayParam == "" {
+		day = int(time.Now().Weekday())
+	} else {
+		parsed, err := strconv.Atoi(dayParam)
+		if err != nil {
+			day = DayNameToIndex(dayParam)
+		} else {
+			day = parsed
+		}
+	}
+
+	startMin, _ := strconv.Atoi(r.URL.Query().Get("start"))
+	if startMin <= 0 {
+		startMin = 540 // Default 9:00 AM
+	}
+
+	endMin, _ := strconv.Atoi(r.URL.Query().Get("end"))
+	if endMin <= 0 {
+		endMin = startMin + 45 // Default 45 mins period
+	}
+
+	room := r.URL.Query().Get("room")
+	if room == "" {
+		room = "Room 303"
+	}
+
+	res := h.service.CheckRoomBookingConflict(day, startMin, endMin, room)
+	utils.Success(w, http.StatusOK, "Room conflict check completed", res)
+}

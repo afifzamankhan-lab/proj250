@@ -80,3 +80,19 @@ func TestRoomAvailability(t *testing.T) {
 		t.Errorf("Expected Room 630 to be busy")
 	}
 }
+
+func TestRoomBookingConflict(t *testing.T) {
+	svc := NewService()
+
+	// Sunday 09:00 AM - 10:30 AM (540 - 630 min) in Room 303 is occupied by Section A (OOP Sessional)
+	conflict := svc.CheckRoomBookingConflict(0, 540, 630, "Room 303")
+	if !conflict.HasConflict {
+		t.Errorf("Expected Room 303 to have conflict on Sunday 9:00-10:30 AM")
+	}
+
+	// Room 304 on Sunday 9:00-10:30 AM should be free
+	freeCheck := svc.CheckRoomBookingConflict(0, 540, 630, "Room 304")
+	if freeCheck.HasConflict {
+		t.Errorf("Expected Room 304 to be free on Sunday 9:00-10:30 AM")
+	}
+}
