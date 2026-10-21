@@ -66,3 +66,52 @@ func (h *Handler) GetCourseByCode(w http.ResponseWriter, r *http.Request) {
 
 	utils.Success(w, http.StatusOK, "Course details retrieved", c)
 }
+
+// GET /api/v1/courses/details/{code}
+func (h *Handler) GetCourseDetails(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		code = strings.TrimPrefix(r.URL.Path, "/api/v1/courses/details/")
+	}
+	if code == "" {
+		code = "CSE 0541 2258"
+	}
+
+	detail, found := h.service.GetCourseDetails(code)
+	if !found {
+		utils.Error(w, http.StatusNotFound, "Course details not found", nil)
+		return
+	}
+
+	utils.Success(w, http.StatusOK, "Course syllabus and details retrieved", detail)
+}
+
+// GET /api/v1/courses/assignments?code=CSE 0541 2258
+func (h *Handler) GetAssignments(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		code = "CSE 0541 2258"
+	}
+
+	assignments := h.service.GetAssignmentsByCourse(code)
+	utils.Success(w, http.StatusOK, "Assignments retrieved successfully", assignments)
+}
+
+// POST /api/v1/courses/assignments/submit
+func (h *Handler) SubmitAssignment(w http.ResponseWriter, r *http.Request) {
+	var req AssignmentSubmitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.Error(w, http.StatusBadRequest, "Invalid submission payload", nil)
+		return
+	}
+
+	resp := map[string]interface{}{
+		"assignmentId": req.AssignmentID,
+		"studentReg":   req.StudentReg,
+		"status":       "submitted",
+		"timestamp":    "2026-10-21T10:00:00Z",
+		"message":      "Assignment archived and submitted to lab instructor successfully",
+	}
+
+	utils.Success(w, http.StatusOK, "Assignment submitted successfully", resp)
+}

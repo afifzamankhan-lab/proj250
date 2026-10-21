@@ -6,9 +6,12 @@ import {
   fetchLiveCurrentClass,
   fetchLiveAttendance,
   fetchRoomConflict,
+  fetchCourseDetails,
+  submitLabAssignment,
   LiveCurrentClass,
   LiveAttendanceProfile,
   LiveRoomConflict,
+  CourseDetailResponse,
 } from "@/lib/api";
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────────
@@ -1154,6 +1157,31 @@ function Dashboard({
   const [roomResult, setRoomResult] = useState<LiveRoomConflict | null>(null);
   const [isCheckingRoom, setIsCheckingRoom] = useState<boolean>(false);
 
+  // Day 3: Course Syllabus & Lab Assignment Modal State
+  const [inspectCourseCode, setInspectCourseCode] = useState<string | null>(null);
+  const [courseDetailData, setCourseDetailData] = useState<CourseDetailResponse | null>(null);
+  const [loadingCourseDetail, setLoadingCourseDetail] = useState<boolean>(false);
+  const [assignmentSubmitting, setAssignmentSubmitting] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
+  const handleOpenCourseModal = async (code: string) => {
+    setInspectCourseCode(code);
+    setLoadingCourseDetail(true);
+    setSubmitSuccess(null);
+    const data = await fetchCourseDetails(code);
+    setCourseDetailData(data);
+    setLoadingCourseDetail(false);
+  };
+
+  const handleSubmitLabAssignment = async (asgId: string) => {
+    setAssignmentSubmitting(asgId);
+    const ok = await submitLabAssignment(asgId, user.registration, "Lab_Submission_SourceCode.zip");
+    if (ok) {
+      setSubmitSuccess(asgId);
+    }
+    setAssignmentSubmitting(null);
+  };
+
   useEffect(() => {
     let isMounted = true;
     async function loadLiveData() {
@@ -2037,7 +2065,7 @@ function Dashboard({
                       </p>
                     </div>
 
-                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: 10, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                       <span style={{
                         fontSize: 12, fontWeight: 700,
                         color: course.type === "lab" ? "#16a34a" : "#1a5fb4"
@@ -2051,6 +2079,18 @@ function Dashboard({
                         {is4thSem ? "Enrolled & In Progress" : `Grade: ${course.grade}`}
                       </span>
                     </div>
+                    {is4thSem && (
+                      <button
+                        onClick={() => handleOpenCourseModal(course.code)}
+                        style={{
+                          width: "100%", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                          background: "#f1f5f9", color: "#1e293b", border: "1px solid #cbd5e1", cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s ease"
+                        }}
+                      >
+                        <span>📑 View Syllabus &amp; Lab Assignments</span> &rarr;
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

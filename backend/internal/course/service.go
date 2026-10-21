@@ -239,3 +239,87 @@ func (s *Service) CheckPrerequisites(targetCode string, passedCodes []string) Pr
 		Message:             "Missing required prerequisite courses",
 	}
 }
+
+// Day 3 Implementation: Course Syllabus & Sessional Lab Assignments
+func (s *Service) GetCourseDetails(code string) (*CourseDetail, bool) {
+	c, found := s.GetCourseByCode(code)
+	if !found {
+		return nil, false
+	}
+
+	// Generate syllabus topics
+	topics := []SyllabusTopic{
+		{Week: 1, Title: "Course Overview & Fundamentals", Description: "Introduction to core concepts, course objectives, and textbook references.", Reference: "Chapter 1-2"},
+		{Week: 2, Title: "Core Theoretical Foundations", Description: "Detailed analysis of structural algorithms and formal methods.", Reference: "Chapter 3-4"},
+		{Week: 3, Title: "Intermediate Paradigms", Description: "Advanced constructs, complexity analysis, and modular implementations.", Reference: "Chapter 5-6"},
+		{Week: 4, Title: "Midterm Review & Applications", Description: "Real-world engineering case studies and performance evaluation.", Reference: "Selected Papers"},
+		{Week: 5, Title: "Advanced Topics & Term Project", Description: "Final project design, modern extensions, and comprehensive viva preparation.", Reference: "Lab Handouts"},
+	}
+
+	// Assignments for labs or term papers for theory
+	var assignments []Assignment
+	if c.Type == "lab" {
+		assignments = append(assignments, Assignment{
+			ID:          "asg-01",
+			CourseCode:  c.Code,
+			Title:       "Lab Assignment 1: Practical Implementation",
+			Description: "Implement core algorithms in lab with benchmark analysis and submit source code archive.",
+			DueDate:     "Sunday, 11:59 PM",
+			MaxMarks:    25,
+			LabRoom:     "Room 630 / Room 303",
+			Submitted:   true,
+		})
+		assignments = append(assignments, Assignment{
+			ID:          "asg-02",
+			CourseCode:  c.Code,
+			Title:       "Lab Assignment 2: Complex System Integration",
+			Description: "Design and implement end-to-end modular solution with automated unit tests.",
+			DueDate:     "Thursday, 05:00 PM",
+			MaxMarks:    25,
+			LabRoom:     "Room 304 / Room EEE",
+			Submitted:   false,
+		})
+	} else {
+		assignments = append(assignments, Assignment{
+			ID:          "term-01",
+			CourseCode:  c.Code,
+			Title:       "Continuous Assessment Quiz & Term Problem Set",
+			Description: "Analytical problem set covering Weeks 1 to 4 lecture curriculum.",
+			DueDate:     "Next Class Test Slot",
+			MaxMarks:    20,
+			LabRoom:     "Gallery 2 / Room 629",
+			Submitted:   false,
+		})
+	}
+
+	email := "teacher@sust.edu"
+	if strings.Contains(c.TeacherShort, "MJI") {
+		email = "jahid-cse@sust.edu"
+	} else if strings.Contains(c.TeacherShort, "MMH") {
+		email = "masud-cse@sust.edu"
+	} else if strings.Contains(c.TeacherShort, "MHM") {
+		email = "habib-cse@sust.edu"
+	} else if strings.Contains(c.TeacherShort, "MSC") {
+		email = "saiful-cse@sust.edu"
+	} else if strings.Contains(c.TeacherShort, "FIF") {
+		email = "fahim-cse@sust.edu"
+	}
+
+	detail := &CourseDetail{
+		Course:       *c,
+		TeacherEmail: email,
+		OfficeRoom:   "Room 301, Dept. of CSE, SUST",
+		Syllabus:     topics,
+		Assignments:  assignments,
+	}
+
+	return detail, true
+}
+
+func (s *Service) GetAssignmentsByCourse(code string) []Assignment {
+	detail, found := s.GetCourseDetails(code)
+	if !found {
+		return []Assignment{}
+	}
+	return detail.Assignments
+}

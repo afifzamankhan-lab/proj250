@@ -136,3 +136,68 @@ export async function fetchRoomConflict(day: number, start: number, end: number,
     return null;
   }
 }
+
+export interface CourseAssignment {
+  id: string;
+  courseCode: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  maxMarks: number;
+  labRoom: string;
+  submitted: boolean;
+}
+
+export interface SyllabusTopic {
+  week: number;
+  title: string;
+  description: string;
+  reference: string;
+}
+
+export interface CourseDetailResponse {
+  course: {
+    code: string;
+    name: string;
+    credits: number;
+    teacher: string;
+    teacherShort: string;
+    type: "theory" | "lab";
+    semester: number;
+    department: string;
+    prerequisites: string[];
+    evaluation: {
+      attendance: number;
+      classTests: number;
+      semesterFinal: number;
+    };
+  };
+  teacherEmail: string;
+  officeRoom: string;
+  syllabus: SyllabusTopic[];
+  assignments: CourseAssignment[];
+}
+
+export async function fetchCourseDetails(code: string): Promise<CourseDetailResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE}/courses/details/${encodeURIComponent(code)}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json: ApiResponse<CourseDetailResponse> = await res.json();
+    return json.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function submitLabAssignment(assignmentId: string, studentReg: string, fileName: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/courses/assignments/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId, studentReg, fileName }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

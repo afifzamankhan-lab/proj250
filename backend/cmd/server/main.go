@@ -134,6 +134,9 @@ func main() {
 			courseRouter.Get("/", courseHandler.GetCourses)
 			courseRouter.Get("/analytics", courseHandler.GetAnalytics)
 			courseRouter.Post("/prerequisites/check", courseHandler.CheckPrerequisites)
+			courseRouter.Get("/details/{code}", courseHandler.GetCourseDetails)
+			courseRouter.Get("/assignments", courseHandler.GetAssignments)
+			courseRouter.Post("/assignments/submit", courseHandler.SubmitAssignment)
 			courseRouter.Get("/{code}", courseHandler.GetCourseByCode)
 		})
 

@@ -43,3 +43,37 @@ type PrerequisiteCheckResponse struct {
 	MissingPrerequisites []string `json:"missingPrerequisites"`
 	Message             string   `json:"message"`
 }
+
+// Day 3 Models: Lab Assignments & Syllabus Details
+type Assignment struct {
+	ID          string `json:"id"`
+	CourseCode  string `json:"courseCode"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	DueDate     string `json:"dueDate"`
+	MaxMarks    int    `json:"maxMarks"`
+	LabRoom     string `json:"labRoom"`
+	Submitted   bool   `json:"submitted"`
+}
+
+type SyllabusTopic struct {
+	Week        int    `json:"week"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Reference   string `json:"reference"`
+}
+
+type CourseDetail struct {
+	Course        Course          `json:"course"`
+	TeacherEmail  string          `json:"teacherEmail"`
+	OfficeRoom    string          `json:"officeRoom"`
+	Syllabus      []SyllabusTopic `json:"syllabus"`
+	Assignments   []Assignment    `json:"assignments"`
+}
+
+type AssignmentSubmitRequest struct {
+	AssignmentID string `json:"assignmentId"`
+	StudentReg   string `json:"studentReg"`
+	FileName     string `json:"fileName"`
+	Notes        string `json:"notes"`
+}

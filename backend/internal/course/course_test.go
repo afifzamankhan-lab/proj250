@@ -41,3 +41,26 @@ func TestPrerequisites(t *testing.T) {
 		t.Errorf("Expected CSE 0541 2258 to be eligible after passing CSE 0541 2257")
 	}
 }
+
+func TestCourseDetailsAndAssignments(t *testing.T) {
+	svc := NewService()
+
+	// Sessional Lab course: CSE 0541 2258 (DSA Lab)
+	detail, found := svc.GetCourseDetails("CSE 0541 2258")
+	if !found {
+		t.Fatalf("Expected course details for CSE 0541 2258")
+	}
+
+	if len(detail.Syllabus) == 0 {
+		t.Errorf("Expected syllabus topics to be generated")
+	}
+
+	if len(detail.Assignments) == 0 {
+		t.Errorf("Expected lab assignments for sessional course")
+	}
+
+	// Verify teacher contact email is set
+	if detail.TeacherEmail == "" {
+		t.Errorf("Expected non-empty teacher email")
+	}
+}
